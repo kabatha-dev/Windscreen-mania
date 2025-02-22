@@ -1,5 +1,6 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework import status
 from .models import (
@@ -11,6 +12,9 @@ from .serializers import (
     ServiceSerializer, QuoteSerializer, OrderSerializer, WindscreenCustomizationSerializer, WindscreenTypeSerializer
 )
 import uuid
+from rest_framework.generics import ListAPIView
+from .serializers import QuoteSerializer, OrderSerializer
+from rest_framework.decorators import action
 
 class RegisterVehicleAPIView(APIView):
     def post(self, request):
@@ -143,6 +147,61 @@ class SubmitServiceAPIView(APIView):
 
 class GetQuotesAPIView(APIView):
     def get(self, request):
-        quotes = Quote.objects.all()
+        quotes = Quote.objects.exclude(status="Rejected")  # Exclude rejected quotes
         serializer = QuoteSerializer(quotes, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UpdateQuoteStatusAPIView(APIView):
+    def post(self, request, quote_number):
+        try:
+            quote = Quote.objects.get(quote_number=quote_number)
+            new_status = request.data.get("status", "").capitalize()
+
+            if new_status not in ["Approved", "Rejected", "Pending"]:
+                return Response({"error": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
+
+            quote.status = new_status
+            quote.save()
+
+            # If the quote is approved, create an order
+            if new_status == "Approved":
+                order_number = str(uuid.uuid4())[:8]
+                Order.objects.create(order_number=order_number, quote=quote, status="Working Progress")
+            
+            return Response({"message": f"Quote {quote_number} updated to {new_status}"}, status=status.HTTP_200_OK)
+        
+        except Quote.DoesNotExist:
+            return Response({"error": "Quote not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+class GetApprovedOrdersAPIView(ListAPIView):
+    queryset = Order.objects.filter(quote__status="Approved")
+    serializer_class = OrderSerializer  
+
+
+class QuoteViewSet(viewsets.ModelViewSet):
+    queryset = Quote.objects.all()
+    serializer_class = QuoteSerializer
+
+    @action(detail=True, methods=['patch'])
+    def update_status(self, request, pk=None):
+        quote = self.get_object()
+        new_status = request.data.get('status')
+
+        if new_status not in ['Approved', 'Rejected', 'Pending']:
+            return Response({"error": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
+
+        quote.status = new_status
+        quote.save()
+
+        # Create an order if quote is approved
+        if new_status == 'Approved' and not Order.objects.filter(quote=quote).exists():
+            Order.objects.create(quote=quote, order_number=f"ORD-{quote.quote_number}")
+
+        return Response(QuoteSerializer(quote).data)
+
+class OrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer          

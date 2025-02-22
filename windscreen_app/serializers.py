@@ -15,22 +15,6 @@ class ServiceSerializer(serializers.ModelSerializer):
         model = Service
         fields = '__all__'
 
-
-class QuoteSerializer(serializers.ModelSerializer):
-    vehicle = VehicleSerializer(read_only=True)
-    services = ServiceSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Quote
-        fields = '__all__'
-
-
-class OrderSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Order
-        fields = '__all__'
-
-
 class VehicleMakeSerializer(serializers.ModelSerializer):
     class Meta:
         model = VehicleMake
@@ -64,4 +48,37 @@ class QuoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quote
         fields = '__all__'
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    quote_number = serializers.CharField(source="quote.quote_number", read_only=True)
+    services = serializers.SerializerMethodField()
+    total_cost = serializers.DecimalField(source="quote.total_cost", max_digits=10, decimal_places=2, read_only=True)
+    approval_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ['order_number', 'quote_number', 'services', 'total_cost', 'approval_time', 'status']
+
+    def get_services(self, obj):
+        return [service.name for service in obj.quote.services.all()]
+
+
+class QuoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quote
+        fields = '__all__'
+
+    def update(self, instance, validated_data):
+        if 'status' in validated_data:
+            instance.status = validated_data['status']
+            instance.save()
+
+            # If approved, create an order
+            if instance.status == 'Approved':
+                Order.objects.create(quote=instance, order_number=f"ORD-{instance.quote_number}")
+
+        return instance
+
+
    
