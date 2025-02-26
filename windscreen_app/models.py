@@ -16,6 +16,8 @@ class Service(models.Model):
         return self.name
 
         
+from django.db import models
+
 class Quote(models.Model):
     STATUS_CHOICES = [
         ('Pending', 'Pending'),
@@ -30,6 +32,16 @@ class Quote(models.Model):
     def __str__(self):
         return self.quote_number
 
+    def approve(self):
+        if self.status != "Approved":
+            self.status = "Approved"
+            self.save()
+            if not hasattr(self, "order"):  # Prevent duplicate orders
+                from .models import Order
+                order_number = f"ORD-{self.quote_number}"
+                Order.objects.create(quote=self, order_number=order_number)
+
+
 
 class Order(models.Model):
     quote = models.OneToOneField(Quote, on_delete=models.CASCADE)
@@ -38,8 +50,6 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order from Quote {self.quote.quote_number}"
-
-    
    
 
 class VehicleMake(models.Model):

@@ -50,20 +50,6 @@ class QuoteSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class OrderSerializer(serializers.ModelSerializer):
-    quote_number = serializers.CharField(source="quote.quote_number", read_only=True)
-    services = serializers.SerializerMethodField()
-    total_cost = serializers.DecimalField(source="quote.total_cost", max_digits=10, decimal_places=2, read_only=True)
-    approval_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
-
-    class Meta:
-        model = Order
-        fields = ['order_number', 'quote_number', 'services', 'total_cost', 'approval_time', 'status']
-
-    def get_services(self, obj):
-        return [service.name for service in obj.quote.services.all()]
-
-
 class QuoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quote
@@ -79,6 +65,20 @@ class QuoteSerializer(serializers.ModelSerializer):
                 Order.objects.create(quote=instance, order_number=f"ORD-{instance.quote_number}")
 
         return instance
+    
+class OrderSerializer(serializers.ModelSerializer):
+    quote_number = serializers.CharField(source="quote.quote_number", read_only=True)
+    services = serializers.SerializerMethodField()
+    total_cost = serializers.DecimalField(source="quote.total_cost", max_digits=10, decimal_places=2, read_only=True)
+    approval_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ['order_number', 'quote_number', 'services', 'total_cost', 'approval_time']
+
+    def get_services(self, obj):
+        return [service.name for service in obj.quote.services.all()]
+
 
 
    

@@ -152,28 +152,28 @@ class GetQuotesAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class UpdateQuoteStatusAPIView(APIView):
-    def post(self, request, quote_number):
+class ApproveQuoteAPIView(APIView):
+    def patch(self, request, *args, **kwargs):
+        pk = kwargs.get("pk")  # Extract pk from kwargs
+        if not pk:
+            return Response({"error": "Missing quote ID"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            quote = Quote.objects.get(quote_number=quote_number)
-            new_status = request.data.get("status", "").capitalize()
-
-            if new_status not in ["Approved", "Rejected", "Pending"]:
-                return Response({"error": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
-
-            quote.status = new_status
+            quote = Quote.objects.get(pk=pk)
+            quote.status = request.data.get("status", quote.status)  # Update status
             quote.save()
-
-            # If the quote is approved, create an order
-            if new_status == "Approved":
-                order_number = str(uuid.uuid4())[:8]
-                Order.objects.create(order_number=order_number, quote=quote, status="Working Progress")
-            
-            return Response({"message": f"Quote {quote_number} updated to {new_status}"}, status=status.HTTP_200_OK)
-        
+            return Response({"message": "Quote status updated successfully"}, status=status.HTTP_200_OK)
         except Quote.DoesNotExist:
-            return Response({"error": "Quote not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Quote not found"}, status=status.HTTP_404_NOT_FOUND)   
         
+
+class CreateOrderAPIView(APIView):
+    def post(self, request):
+        serializer = OrderSerializer(data=request.data)
+        if serializer.is_valid():
+            order = serializer.save()
+            return Response({"message": "Order created successfully!"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)        
 
 
 class GetApprovedOrdersAPIView(ListAPIView):
