@@ -5,16 +5,20 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 from .models import (
     InsuranceProvider, Vehicle, Service, Quote, Order, VehicleMake,
-    VehicleModel, WindscreenCustomization, WindscreenType, UserDetails
+    VehicleModel, WindscreenCustomization, WindscreenType, UserDetails, WorkProgress
 )
 from .serializers import (
     InsuranceProviderSerializer, VehicleMakeSerializer, VehicleModelSerializer, VehicleSerializer,
-    ServiceSerializer, QuoteSerializer, OrderSerializer, WindscreenCustomizationSerializer, WindscreenTypeSerializer
+    ServiceSerializer, QuoteSerializer, OrderSerializer, WindscreenCustomizationSerializer, WindscreenTypeSerializer, WorkProgressSerializer
 )
 import uuid
 from rest_framework.generics import ListAPIView
 from .serializers import QuoteSerializer, OrderSerializer
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
+from rest_framework import viewsets, status
+from rest_framework.views import APIView
 
 class RegisterVehicleAPIView(APIView):
     def post(self, request):
@@ -205,3 +209,18 @@ class QuoteViewSet(viewsets.ModelViewSet):
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer          
+
+
+
+class SubmitWorkProgressAPIView(APIView):
+    parser_classes = (MultiPartParser, FormParser)  # Enable file upload
+
+    def post(self, request, *args, **kwargs):
+        serializer = WorkProgressSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "message": "Work progress submitted successfully!",
+                "data": serializer.data
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

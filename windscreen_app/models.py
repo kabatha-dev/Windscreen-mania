@@ -1,5 +1,13 @@
 from django.db import models
 from django.utils import timezone  
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework import viewsets, status
+from rest_framework.views import APIView
+from django.core.validators import FileExtensionValidator
+
+from windscreen_app.serializers import WorkProgressSerializer
 
 class Vehicle(models.Model):
     registration_number = models.CharField(max_length=15, unique=True)
@@ -16,7 +24,7 @@ class Service(models.Model):
         return self.name
 
         
-from django.db import models
+
 
 class Quote(models.Model):
     STATUS_CHOICES = [
@@ -93,3 +101,41 @@ class UserDetails(models.Model):
     def __str__(self):
         return self.full_name    
   
+
+class WorkProgress(models.Model):
+    vehicle_reg_no = models.CharField(max_length=20)
+    description = models.TextField()
+    image1 = models.ImageField(upload_to='work_progress/', blank=True, null=True)
+    image2 = models.ImageField(upload_to='work_progress/', blank=True, null=True)
+    pdf_file = models.FileField(upload_to='work_progress/', 
+                                validators=[FileExtensionValidator(['pdf'])], 
+                                blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.vehicle_reg_no
+    
+
+class WorkProgressViewSet(viewsets.ModelViewSet):
+    queryset = WorkProgress.objects.all().order_by('-created_at')
+    serializer_class = WorkProgressSerializer
+    parser_classes = (MultiPartParser, FormParser)  # Enable file upload
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # Optional: Endpoint to filter by vehicle registration number
+    @action(detail=False, methods=['get'], url_path='filter')
+    def filter_by_vehicle(self, request):
+        reg_no = request.query_params.get('vehicle_reg_no')
+        if reg_no:
+            queryset = self.get_queryset().filter(vehicle_reg_no=reg_no)
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+        return Response({"error": "Please provide a vehicle_reg_no parameter."}, 
+                        status=status.HTTP_400_BAD_REQUEST)    
+
