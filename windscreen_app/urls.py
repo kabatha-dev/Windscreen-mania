@@ -1,6 +1,6 @@
 from django.urls import path
 from windscreen_app.views import (
-    CreateOrderAPIView, GetApprovedOrdersAPIView, GetQuotesAPIView, GetServicesAPIView, RegisterVehicleAPIView, GenerateQuoteAPIView,
+    CreateOrderAPIView, GetApprovedOrdersAPIView, GetOrderDetailsAPIView, GetQuotesAPIView, GetServicesAPIView, RegisterVehicleAPIView, GenerateQuoteAPIView,
     ApproveQuoteAPIView, SubmitServiceAPIView, SubmitWorkProgressAPIView, 
 )
 from windscreen_app import views
@@ -20,5 +20,5 @@ urlpatterns = [
     path("quotes/<int:pk>/update-status/", ApproveQuoteAPIView.as_view(), name="update-quote-status"),
     path("orders/create/", CreateOrderAPIView.as_view(), name='create-order'),
     path('work-progress/submit/', SubmitWorkProgressAPIView.as_view(), name='submit-work-progress'),
-        # Added endpoint
+    path('orders/<str:vehicle_reg_no>/', GetOrderDetailsAPIView.as_view(), name='get-order-details'),
 ]

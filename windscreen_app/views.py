@@ -224,3 +224,16 @@ class SubmitWorkProgressAPIView(APIView):
                 "data": serializer.data
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class GetOrderDetailsAPIView(APIView):
+    def get(self, request, vehicle_reg_no):
+        try:
+            vehicle = Vehicle.objects.get(registration_number=vehicle_reg_no)
+            order = Order.objects.get(quote__vehicle=vehicle)
+            serializer = OrderSerializer(order)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Vehicle.DoesNotExist:
+            return Response({"error": "Vehicle not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Order.DoesNotExist:
+            return Response({"error": "Order not found for this vehicle"}, status=status.HTTP_404_NOT_FOUND)    
