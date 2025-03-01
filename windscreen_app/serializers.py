@@ -121,3 +121,22 @@ class WorkProgressSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         self.Meta.model = apps.get_model('windscreen_app', 'WorkProgress')
         super().__init__(*args, **kwargs)
+
+class InvoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = None
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        self.Meta.model = apps.get_model('windscreen_app', 'Invoice')
+        super().__init__(*args, **kwargs)
+
+class StatementOfAccountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = None
+        fields = '__all__'
+
+    
+    def __init__(self, *args, **kwargs):
+        self.Meta.model = apps.get_model('windscreen_app', 'StatementOfAccount')
+        super().__init__(*args, **kwargs)

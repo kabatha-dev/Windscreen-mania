@@ -2,14 +2,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .models import (
     InsuranceProvider, Vehicle, Service, Quote, Order, VehicleMake,
-    VehicleModel, WindscreenCustomization, WindscreenType, UserDetails, WorkProgress
+    VehicleModel, WindscreenCustomization, WindscreenType, UserDetails, WorkProgress,StatementOfAccount,Invoice
 )
 from .serializers import (
     InsuranceProviderSerializer, VehicleMakeSerializer, VehicleModelSerializer, VehicleSerializer,
-    ServiceSerializer, QuoteSerializer, OrderSerializer, WindscreenCustomizationSerializer, WindscreenTypeSerializer, WorkProgressSerializer
+    ServiceSerializer, QuoteSerializer, OrderSerializer, WindscreenCustomizationSerializer, WindscreenTypeSerializer, WorkProgressSerializer,StatementOfAccountSerializer,InvoiceSerializer
 )
 import uuid
 from rest_framework.generics import ListAPIView
@@ -224,3 +225,42 @@ class SubmitWorkProgressAPIView(APIView):
                 "data": serializer.data
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StatementOfAccountViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows Statement of Accounts to be viewed or edited.
+    """
+    queryset = StatementOfAccount.objects.all()
+    serializer_class = StatementOfAccountSerializer
+    permission_classes = [IsAuthenticated]  # Restricts access to authenticated users
+
+    def get_queryset(self):
+        """
+        If a user is logged in, return only their statements.
+        """
+        user = self.request.user
+        return StatementOfAccount.objects.filter(customer=user)
+    
+class InvoiceViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows invoices to be viewed or edited.
+    """
+    queryset = Invoice.objects.all()
+    serializer_class = InvoiceSerializer
+    permission_classes = [IsAuthenticated]  
+
+    def get_queryset(self):
+        """
+        Optionally filter invoices based on query parameters.
+        """
+        queryset = super().get_queryset()
+        customer_id = self.request.query_params.get('customer_id')
+        status = self.request.query_params.get('status')
+
+        if customer_id:
+            queryset = queryset.filter(customer_id=customer_id)
+        if status:
+            queryset = queryset.filter(status=status)
+
+        return queryset
