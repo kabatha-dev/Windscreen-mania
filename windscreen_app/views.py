@@ -9,7 +9,7 @@ from .models import (
 )
 from .serializers import (
     InsuranceProviderSerializer, VehicleMakeSerializer, VehicleModelSerializer, VehicleSerializer,
-    ServiceSerializer, QuoteSerializer, OrderSerializer, WindscreenCustomizationSerializer, WindscreenTypeSerializer, WorkProgressSerializer
+    ServiceSerializer, QuoteSerializer, OrderSerializer, WindscreenCustomizationSerializer, WindscreenTypeSerializer, WorkProgressSerializer, UserDetailsSerializer
 )
 import uuid
 from rest_framework.generics import ListAPIView

@@ -131,7 +131,7 @@ class WorkProgressSerializer(serializers.ModelSerializer):
 
 class UserDetailsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = None  # Temporarily set to None
+        model = None 
         fields = '__all__'
 
     def __init__(self, *args, **kwargs):
