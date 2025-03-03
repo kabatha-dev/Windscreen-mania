@@ -31,6 +31,12 @@ class RegisterVehicleAPIView(APIView):
                 "services": ServiceSerializer(services, many=True).data
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+    def get(self, request):
+        vehicles = Vehicle.objects.all()
+        serializer = VehicleSerializer(vehicles, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class GenerateQuoteAPIView(APIView):
     def post(self, request):
@@ -112,7 +118,7 @@ class SubmitServiceAPIView(APIView):
         user_details_data = request.data.get("user_details", {})
         selected_services = request.data.get("selected_services", [])
 
-        # Validate required fields
+       
         required_fields = ["fullName", "kraPin", "phone"]
         if any(not user_details_data.get(field) for field in required_fields):
             return Response({"error": "Missing required user details"}, status=status.HTTP_400_BAD_REQUEST)
@@ -147,6 +153,12 @@ class SubmitServiceAPIView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+    
+    def get(self, request):
+        """Retrieve all user details."""
+        users = UserDetails.objects.all()
+        serializer = UserDetailsSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
 
 class GetQuotesAPIView(APIView):

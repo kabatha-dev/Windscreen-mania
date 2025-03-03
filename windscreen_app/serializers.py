@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from django.apps import apps
 
+from windscreen_app import models
+
+
+
 
 class VehicleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -10,6 +14,7 @@ class VehicleSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         self.Meta.model = apps.get_model('windscreen_app', 'Vehicle')
         super().__init__(*args, **kwargs)
+
 
 
 class ServiceSerializer(serializers.ModelSerializer):
@@ -121,3 +126,25 @@ class WorkProgressSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         self.Meta.model = apps.get_model('windscreen_app', 'WorkProgress')
         super().__init__(*args, **kwargs)
+
+
+
+class UserDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = None  # Temporarily set to None
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        self.Meta.model = apps.get_model('windscreen_app', 'UserDetails')
+        super().__init__(*args, **kwargs)
+
+
+class vehicle( serializers.ModelSerializer):
+    class Meta:
+        model = None
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        self.Meta.model = apps.get_model('windscreen_app', 'vehicle')
+        super().__init__(*args, **kwargs)
+
