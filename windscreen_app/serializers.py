@@ -1,95 +1,66 @@
 from rest_framework import serializers
-from django.apps import apps
+from .models import (  # Import models explicitly
+    Vehicle, Service, VehicleMake, VehicleModel, WindscreenCustomization, WindscreenType,
+    InsuranceProvider, Quote, Order, WorkProgress, Invoice, StatementOfAccount
+)
 
 
 class VehicleSerializer(serializers.ModelSerializer):
     class Meta:
-        model = None
+        model = Vehicle
         fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        self.Meta.model = apps.get_model('windscreen_app', 'Vehicle')
-        super().__init__(*args, **kwargs)
 
 
 class ServiceSerializer(serializers.ModelSerializer):
     class Meta:
-        model = None
+        model = Service
         fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        self.Meta.model = apps.get_model('windscreen_app', 'Service')
-        super().__init__(*args, **kwargs)
 
 
 class VehicleMakeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = None
+        model = VehicleMake
         fields = ['id', 'name']
-
-    def __init__(self, *args, **kwargs):
-        self.Meta.model = apps.get_model('windscreen_app', 'VehicleMake')
-        super().__init__(*args, **kwargs)
 
 
 class VehicleModelSerializer(serializers.ModelSerializer):
     class Meta:
-        model = None
+        model = VehicleModel
         fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        self.Meta.model = apps.get_model('windscreen_app', 'VehicleModel')
-        super().__init__(*args, **kwargs)
 
 
 class WindscreenCustomizationSerializer(serializers.ModelSerializer):
     class Meta:
-        model = None
+        model = WindscreenCustomization
         fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        self.Meta.model = apps.get_model('windscreen_app', 'WindscreenCustomization')
-        super().__init__(*args, **kwargs)
 
 
 class WindscreenTypeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = None
+        model = WindscreenType
         fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        self.Meta.model = apps.get_model('windscreen_app', 'WindscreenType')
-        super().__init__(*args, **kwargs)
 
 
 class InsuranceProviderSerializer(serializers.ModelSerializer):
     class Meta:
-        model = None
+        model = InsuranceProvider
         fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        self.Meta.model = apps.get_model('windscreen_app', 'InsuranceProvider')
-        super().__init__(*args, **kwargs)
 
 
 class QuoteSerializer(serializers.ModelSerializer):
+    registration_number = serializers.CharField(required=False, allow_null=True)  # Explicitly define it
     class Meta:
-        model = None
-        fields = '__all__'
+        model = Quote
+        fields = ['id', 'quote_number', 'total_cost', 'status', 'registration_number', 'services']  # Explicitly include it
 
-    def __init__(self, *args, **kwargs):
-        self.Meta.model = apps.get_model('windscreen_app', 'Quote')
-        super().__init__(*args, **kwargs)
 
     def update(self, instance, validated_data):
-        Order = apps.get_model('windscreen_app', 'Order')  # Lazy reference
-
         if 'status' in validated_data:
             instance.status = validated_data['status']
             instance.save()
 
             # If approved, create an order
-            if instance.status == 'Approved':
+            if instance.status == 'Approved' and not Order.objects.filter(quote=instance).exists():
                 Order.objects.create(quote=instance, order_number=f"ORD-{instance.quote_number}")
 
         return instance
@@ -102,12 +73,8 @@ class OrderSerializer(serializers.ModelSerializer):
     approval_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
 
     class Meta:
-        model = None
+        model = Order
         fields = ['order_number', 'quote_number', 'services', 'total_cost', 'approval_time']
-
-    def __init__(self, *args, **kwargs):
-        self.Meta.model = apps.get_model('windscreen_app', 'Order')
-        super().__init__(*args, **kwargs)
 
     def get_services(self, obj):
         return [service.name for service in obj.quote.services.all()]
@@ -115,28 +82,17 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class WorkProgressSerializer(serializers.ModelSerializer):
     class Meta:
-        model = None
+        model = WorkProgress
         fields = '__all__'
 
-    def __init__(self, *args, **kwargs):
-        self.Meta.model = apps.get_model('windscreen_app', 'WorkProgress')
-        super().__init__(*args, **kwargs)
 
 class InvoiceSerializer(serializers.ModelSerializer):
     class Meta:
-        model = None
+        model = Invoice
         fields = '__all__'
 
-    def __init__(self, *args, **kwargs):
-        self.Meta.model = apps.get_model('windscreen_app', 'Invoice')
-        super().__init__(*args, **kwargs)
 
 class StatementOfAccountSerializer(serializers.ModelSerializer):
     class Meta:
-        model = None
+        model = StatementOfAccount
         fields = '__all__'
-
-    
-    def __init__(self, *args, **kwargs):
-        self.Meta.model = apps.get_model('windscreen_app', 'StatementOfAccount')
-        super().__init__(*args, **kwargs)
