@@ -148,3 +148,9 @@ class vehicle( serializers.ModelSerializer):
         self.Meta.model = apps.get_model('windscreen_app', 'vehicle')
         super().__init__(*args, **kwargs)
 
+
+class OrderByNumberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = None
+        fields = '__all__'        
+
