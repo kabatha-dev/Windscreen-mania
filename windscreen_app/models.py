@@ -54,7 +54,10 @@ class Quote(models.Model):
 class Order(models.Model):
     quote = models.OneToOneField(Quote, on_delete=models.CASCADE)
     order_number = models.CharField(max_length=255, unique=True)
-    approval_time = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, default="Pending")  # Set default value
+    created_at = models.DateTimeField(default=timezone.now)  # ✅ Ensure this is set
+
+   
 
     def __str__(self):
         return f"Order from Quote {self.quote.quote_number}"

@@ -28,7 +28,7 @@ class QuoteAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('order_number', 'quote', 'approval_time')
+    list_display = ('order_number', 'quote', )
     search_fields = ('order_number', 'quote__quote_number')
 
 @admin.register(VehicleMake)

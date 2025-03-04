@@ -76,10 +76,9 @@ class InsuranceProviderSerializer(serializers.ModelSerializer):
         self.Meta.model = apps.get_model('windscreen_app', 'InsuranceProvider')
         super().__init__(*args, **kwargs)
 
-
 class QuoteSerializer(serializers.ModelSerializer):
     class Meta:
-        model = None
+        model = None  # Dynamically assigned in __init__
         fields = '__all__'
 
     def __init__(self, *args, **kwargs):
@@ -93,13 +92,15 @@ class QuoteSerializer(serializers.ModelSerializer):
             instance.status = validated_data['status']
             instance.save()
 
-            # If approved, create an order
-            if instance.status == 'Approved':
+            # Ensure an order is created only once per approved quote
+            if instance.status == 'Approved' and not Order.objects.filter(quote=instance).exists():
                 Order.objects.create(quote=instance, order_number=f"ORD-{instance.quote_number}")
+                print(f"✅ Order created for Quote: {instance.quote_number}")  # Debugging message
+            else:
+                print(f"⚠️ Order already exists or quote is not approved: {instance.quote_number}")
 
         return instance
-
-
+    
 class OrderSerializer(serializers.ModelSerializer):
     quote_number = serializers.CharField(source="quote.quote_number", read_only=True)
     services = serializers.SerializerMethodField()
