@@ -106,7 +106,7 @@ class UserDetails(models.Model):
   
 
 class WorkProgress(models.Model):
-    vehicle_reg_no = models.CharField(max_length=20)
+    vehicle_reg_no = models.CharField(max_length=20, blank=True, null= True)
     description = models.TextField()
     image1 = models.ImageField(upload_to='work_progress/', blank=True, null=True)
     image2 = models.ImageField(upload_to='work_progress/', blank=True, null=True)
