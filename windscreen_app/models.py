@@ -9,59 +9,9 @@ from django.core.validators import FileExtensionValidator
 
 from windscreen_app.serializers import WorkProgressSerializer
 
-class Vehicle(models.Model):
-    registration_number = models.CharField(max_length=15, unique=True)
-    year_of_make = models.IntegerField()
-
-    def __str__(self):
-        return self.registration_number
-
-class Service(models.Model):
-    name = models.CharField(max_length=255)
-    cost = models.DecimalField(max_digits=10, decimal_places=2)
-
-    def __str__(self):
-        return self.name
-
-        
-
-
-class Quote(models.Model):
-    STATUS_CHOICES = [
-        ('Pending', 'Pending'),
-        ('Approved', 'Approved'),
-        ('Rejected', 'Rejected'),
-    ]
-    quote_number = models.CharField(max_length=255, unique=True)
-    services = models.ManyToManyField('Service')
-    total_cost = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
-
-    def __str__(self):
-        return self.quote_number
-
-    def approve(self):
-        if self.status != "Approved":
-            self.status = "Approved"
-            self.save()
-            if not hasattr(self, "order"):  # Prevent duplicate orders
-                from .models import Order
-                order_number = f"ORD-{self.quote_number}"
-                Order.objects.create(quote=self, order_number=order_number)
 
 
 
-class Order(models.Model):
-    quote = models.OneToOneField(Quote, on_delete=models.CASCADE)
-    order_number = models.CharField(max_length=255, unique=True)
-    status = models.CharField(max_length=20, default="Pending")  # Set default value
-    created_at = models.DateTimeField(default=timezone.now)  # ✅ Ensure this is set
-
-   
-
-    def __str__(self):
-        return f"Order from Quote {self.quote.quote_number}"
-   
 
 class VehicleMake(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -104,6 +54,59 @@ class UserDetails(models.Model):
     def __str__(self):
         return self.full_name    
   
+
+class Vehicle(models.Model):
+    registration_number = models.CharField(max_length=15, unique=True)
+    year_of_make = models.IntegerField()
+
+    def __str__(self):
+        return self.registration_number
+
+class Service(models.Model):
+    name = models.CharField(max_length=255)
+    cost = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return self.name
+
+        
+class Quote(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected'),
+    ]
+    quote_number = models.CharField(max_length=255, unique=True)
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name="quotes", default=140)
+    services = models.ManyToManyField('Service')
+    windscreen_type = models.ForeignKey(WindscreenType, on_delete=models.CASCADE, related_name="quotes", default=57)
+    windscreen_customization = models.ForeignKey(WindscreenCustomization, on_delete=models.CASCADE, related_name="qoutes", default=52)
+    total_cost = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+
+    def __str__(self):
+        return self.quote_number
+
+    def approve(self):
+        if self.status != "Approved":
+            self.status = "Approved"
+            self.save()
+            if not hasattr(self, "order"):  # Prevent duplicate orders
+                order_number = f"ORD-{self.quote_number}"
+                Order.objects.create(quote=self, order_number=order_number)
+
+
+class Order(models.Model):
+    quote = models.OneToOneField(Quote, on_delete=models.CASCADE, related_name="order")
+    order_number = models.CharField(max_length=255, unique=True)
+    status = models.CharField(max_length=20, default="Pending")  
+    created_at = models.DateTimeField(default=timezone.now)  
+
+    def __str__(self):
+        return f"Order from Quote {self.quote.quote_number}"
+
+   
+
 
 class WorkProgress(models.Model):
     vehicle_reg_no = models.CharField(max_length=20, blank=True, null= True)
