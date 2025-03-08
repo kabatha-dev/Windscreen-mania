@@ -5,11 +5,11 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 from .models import (
     InsuranceProvider, Vehicle, Service, Quote, Order, VehicleMake,
-    VehicleModel, WindscreenCustomization, WindscreenType, UserDetails, WorkProgress
+    VehicleModel, WindscreenCustomization, WindscreenType, UserDetails, WorkProgress,Invoice,StatementOfAccount
 )
 from .serializers import (
     InsuranceProviderSerializer, VehicleMakeSerializer, VehicleModelSerializer, VehicleSerializer,
-    ServiceSerializer, QuoteSerializer, OrderSerializer, WindscreenCustomizationSerializer, WindscreenTypeSerializer, WorkProgressSerializer, UserDetailsSerializer
+    ServiceSerializer, QuoteSerializer, OrderSerializer, WindscreenCustomizationSerializer, WindscreenTypeSerializer, WorkProgressSerializer, UserDetailsSerializer,InvoiceSerializer,StatementOfAccountSerializer
 )
 import uuid
 from rest_framework.generics import ListAPIView
@@ -246,3 +246,11 @@ class GetOrderByIdAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Order.DoesNotExist:
             return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+class InvoiceViewSet(viewsets.ModelViewSet):
+    queryset = Invoice.objects.all()
+    serializer_class = InvoiceSerializer
+
+class StatementOfAccountViewSet(viewsets.ModelViewSet):
+    queryset = StatementOfAccount.objects.all()
+    serializer_class = StatementOfAccountSerializer

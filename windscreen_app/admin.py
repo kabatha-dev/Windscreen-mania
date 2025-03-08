@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Vehicle, Service, Quote, Order, VehicleMake, VehicleModel,
-    WindscreenType, WindscreenCustomization, InsuranceProvider, UserDetails
+    WindscreenType, WindscreenCustomization, InsuranceProvider, UserDetails,Invoice, StatementOfAccount
 )
 
 @admin.register(Vehicle)
@@ -62,3 +62,12 @@ class InsuranceProviderAdmin(admin.ModelAdmin):
 class UserDetailsAdmin(admin.ModelAdmin):
     list_display = ('full_name', 'kra_pin', 'phone')
     search_fields = ('full_name', 'kra_pin', 'phone')
+
+@admin.register(Invoice)
+class InvoiceAdmin(admin.ModelAdmin):
+    list_display = ('invoice_number', 'customer_name', 'vehicle_registration', 'total_amount', 'status', 'created_at')
+    list_filter = ('status', 'created_at')
+
+@admin.register(StatementOfAccount)
+class StatementOfAccountAdmin(admin.ModelAdmin):
+    list_display = ('customer_name', 'total_due', 'last_payment_date')
