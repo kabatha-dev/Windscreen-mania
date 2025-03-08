@@ -4,8 +4,6 @@ from django.apps import apps
 from windscreen_app import models
 
 
-
-
 class VehicleSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
@@ -155,3 +153,27 @@ class OrderByNumberSerializer(serializers.ModelSerializer):
         model = None
         fields = '__all__'        
 
+class InvoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = None  
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        self.Meta.model = apps.get_model('windscreen_app', 'Invoice')  
+        super().__init__(*args, **kwargs)
+
+class StatementOfAccountSerializer(serializers.ModelSerializer):
+    invoices = serializers.SerializerMethodField()  
+
+    class Meta:
+        model = None  
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        self.Meta.model = apps.get_model('windscreen_app', 'StatementOfAccount') 
+        super().__init__(*args, **kwargs)
+
+    def get_invoices(self, obj):
+        Invoice = apps.get_model('windscreen_app', 'Invoice')  
+        invoices = Invoice.objects.filter(statement_of_account=obj)
+        return InvoiceSerializer(invoices, many=True).data

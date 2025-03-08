@@ -10,9 +10,6 @@ from django.core.validators import FileExtensionValidator
 from windscreen_app.serializers import WorkProgressSerializer
 
 
-
-
-
 class VehicleMake(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
@@ -145,3 +142,39 @@ class WorkProgressViewSet(viewsets.ModelViewSet):
         return Response({"error": "Please provide a vehicle_reg_no parameter."}, 
                         status=status.HTTP_400_BAD_REQUEST)    
 
+class Invoice(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Paid','Paid'),
+        ('Unpaid','Unpaid'),
+    ]
+
+    invoice_number = models.CharField(max_length=20, unique=True)
+    customer_name = models.CharField(max_length=255)
+    vehicle_registration = models.CharField(max_length=20)
+    make = models.CharField(max_length=50)
+    model = models.CharField(max_length=50)
+    model = models.CharField(max_length=50)
+    services = models.JSONField()  
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    due_date = models.DateField()
+
+    def __str__(self):
+        return f"Invoice {self.invoice_number} - {self.customer_name}"
+    
+
+class StatementOfAccount(models.Model):
+    customer_name = models.CharField(max_length=255)
+    invoices = models.ManyToManyField(Invoice)  # One statement links to multiple invoices
+    total_due = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    last_payment_date = models.DateField(null=True, blank=True)
+
+    def update_total_due(self):
+        """Calculate total unpaid amount for the customer."""
+        self.total_due = sum(invoice.total_amount for invoice in self.invoices.filter(status='Unpaid'))
+        self.save()
+
+    def __str__(self):
+        return f"Statement for {self.customer_name} - Due: {self.total_due}"

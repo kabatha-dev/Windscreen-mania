@@ -1,12 +1,19 @@
-from django.urls import path
+from django.urls import path,include
 from windscreen_app.views import (
     CreateOrderAPIView, GetApprovedOrdersAPIView, GetOrderByIdAPIView, GetQuotesAPIView, GetServicesAPIView, 
-    RegisterVehicleAPIView, GenerateQuoteAPIView, ApproveQuoteAPIView, SubmitServiceAPIView, SubmitWorkProgressAPIView,
+    RegisterVehicleAPIView, GenerateQuoteAPIView, ApproveQuoteAPIView, SubmitServiceAPIView, SubmitWorkProgressAPIView,InvoiceViewSet,StatementOfAccountViewSet
 )
 
 from windscreen_app import views
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register(r'Invoices', InvoiceViewSet)
+router.register(r'statements', StatementOfAccountViewSet)
 
 urlpatterns = [
+    path('api/', include(router.urls)),
+ 
     path('register-vehicle/', RegisterVehicleAPIView.as_view(), name='register-vehicle'),
     path('get-vehicles/', RegisterVehicleAPIView.as_view(), name='get-vehicles'),  # Endpoint to get registered vehicles
     path('generate-quote/', GenerateQuoteAPIView.as_view(), name='generate-quote'),
