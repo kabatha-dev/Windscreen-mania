@@ -108,7 +108,7 @@ class Quote(models.Model):
                 self.make = "Unknown"
                 self.model = "Unknown"
 
-        super().save(*args, **kwargs)  # Save first to generate primary key
+        super().save(*args, **kwargs)  
 
     def approve(self):
         """Mark the quote as approved and create an order if it does not exist."""
