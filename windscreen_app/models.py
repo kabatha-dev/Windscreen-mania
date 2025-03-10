@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from django.utils.crypto import get_random_string
 from django.core.validators import FileExtensionValidator
 
-from windscreen_app.serializers import WorkProgressSerializer
+
 
 
 class VehicleMake(models.Model):
@@ -81,13 +81,13 @@ class Quote(models.Model):
     ]
 
     quote_number = models.CharField(max_length=255, unique=True, blank=True)
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name="quotes")
+    vehicle = models.ForeignKey("Vehicle", on_delete=models.SET_NULL, related_name="quotes", null=True, blank=True)
     registration_number = models.CharField(max_length=15, blank=True)
     make = models.CharField(max_length=255, blank=True)
     model = models.CharField(max_length=255, blank=True)
-    services = models.ManyToManyField(Service, blank=True)
-    windscreen_type = models.ForeignKey(WindscreenType, on_delete=models.CASCADE, related_name="quotes")
-    windscreen_customization = models.ForeignKey(WindscreenCustomization, on_delete=models.CASCADE, related_name="quotes")
+    services = models.ManyToManyField("Service", blank=True)
+    windscreen_type = models.ForeignKey("WindscreenType", on_delete=models.SET_NULL, related_name="quotes", null=True, blank=True)
+    windscreen_customization = models.ForeignKey("WindscreenCustomization", on_delete=models.SET_NULL, related_name="quotes", null=True, blank=True)
     total_cost = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
 
@@ -95,7 +95,7 @@ class Quote(models.Model):
         return self.quote_number
 
     def save(self, *args, **kwargs):
-        """Auto-fill quote_number, registration_number, make, model from the related Vehicle."""
+        """Auto-generate quote_number and fetch vehicle details."""
         if not self.quote_number:
             self.quote_number = f"QT-{get_random_string(5).upper()}"
 
@@ -108,14 +108,15 @@ class Quote(models.Model):
                 self.make = "Unknown"
                 self.model = "Unknown"
 
-        super().save(*args, **kwargs)  
+        super().save(*args, **kwargs)  # Save first before adding ManyToMany relations
 
     def approve(self):
-        """Mark the quote as approved and create an order if it does not exist."""
+        """Approve the quote and create an order if it doesn’t exist."""
         if self.status != "Approved":
             self.status = "Approved"
             self.save()
             Order.objects.get_or_create(quote=self, order_number=f"ORD-{self.quote_number}")
+
 
 
 class Order(models.Model):
@@ -144,28 +145,7 @@ class WorkProgress(models.Model):
         return self.vehicle_reg_no
     
 
-class WorkProgressViewSet(viewsets.ModelViewSet):
-    queryset = WorkProgress.objects.all().order_by('-created_at')
-    serializer_class = WorkProgressSerializer
-    parser_classes = (MultiPartParser, FormParser)  # Enable file upload
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    # Optional: Endpoint to filter by vehicle registration number
-    @action(detail=False, methods=['get'], url_path='filter')
-    def filter_by_vehicle(self, request):
-        reg_no = request.query_params.get('vehicle_reg_no')
-        if reg_no:
-            queryset = self.get_queryset().filter(vehicle_reg_no=reg_no)
-            serializer = self.get_serializer(queryset, many=True)
-            return Response(serializer.data)
-        return Response({"error": "Please provide a vehicle_reg_no parameter."}, 
-                        status=status.HTTP_400_BAD_REQUEST)    
+   
 
 class Invoice(models.Model):
     STATUS_CHOICES = [
