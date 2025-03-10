@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
+from django.utils.crypto import get_random_string
 from django.core.validators import FileExtensionValidator
 
 from windscreen_app.serializers import WorkProgressSerializer
@@ -55,6 +56,10 @@ class UserDetails(models.Model):
 class Vehicle(models.Model):
     registration_number = models.CharField(max_length=15, unique=True)
     year_of_make = models.IntegerField()
+    vehicle_model = models.ForeignKey(
+        VehicleModel, on_delete=models.CASCADE, related_name="vehicles", null=True, blank=True
+    )  
+
 
     def __str__(self):
         return self.registration_number
@@ -66,31 +71,51 @@ class Service(models.Model):
     def __str__(self):
         return self.name
 
-        
+
+
 class Quote(models.Model):
     STATUS_CHOICES = [
         ('Pending', 'Pending'),
         ('Approved', 'Approved'),
         ('Rejected', 'Rejected'),
     ]
-    quote_number = models.CharField(max_length=255, unique=True)
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name="quotes", default=140)
-    services = models.ManyToManyField('Service')
-    windscreen_type = models.ForeignKey(WindscreenType, on_delete=models.CASCADE, related_name="quotes", default=57)
-    windscreen_customization = models.ForeignKey(WindscreenCustomization, on_delete=models.CASCADE, related_name="qoutes", default=52)
+
+    quote_number = models.CharField(max_length=255, unique=True, blank=True)
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name="quotes")
+    registration_number = models.CharField(max_length=15, blank=True)
+    make = models.CharField(max_length=255, blank=True)
+    model = models.CharField(max_length=255, blank=True)
+    services = models.ManyToManyField(Service, blank=True)
+    windscreen_type = models.ForeignKey(WindscreenType, on_delete=models.CASCADE, related_name="quotes")
+    windscreen_customization = models.ForeignKey(WindscreenCustomization, on_delete=models.CASCADE, related_name="quotes")
     total_cost = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
 
     def __str__(self):
         return self.quote_number
 
+    def save(self, *args, **kwargs):
+        """Auto-fill quote_number, registration_number, make, model from the related Vehicle."""
+        if not self.quote_number:
+            self.quote_number = f"QT-{get_random_string(5).upper()}"
+
+        if self.vehicle:
+            self.registration_number = self.vehicle.registration_number
+            if self.vehicle.vehicle_model:
+                self.make = self.vehicle.vehicle_model.make.name
+                self.model = self.vehicle.vehicle_model.model
+            else:
+                self.make = "Unknown"
+                self.model = "Unknown"
+
+        super().save(*args, **kwargs)  
+
     def approve(self):
+        """Mark the quote as approved and create an order if it does not exist."""
         if self.status != "Approved":
             self.status = "Approved"
             self.save()
-            if not hasattr(self, "order"):  # Prevent duplicate orders
-                order_number = f"ORD-{self.quote_number}"
-                Order.objects.create(quote=self, order_number=order_number)
+            Order.objects.get_or_create(quote=self, order_number=f"ORD-{self.quote_number}")
 
 
 class Order(models.Model):
@@ -178,3 +203,4 @@ class StatementOfAccount(models.Model):
 
     def __str__(self):
         return f"Statement for {self.customer_name} - Due: {self.total_due}"
+
